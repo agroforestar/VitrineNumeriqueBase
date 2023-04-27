@@ -1,13 +1,19 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using ARLocation;
 using Hessburg;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Android;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
 
 public class ARScene : MonoBehaviour
 {
@@ -33,10 +39,20 @@ public class ARScene : MonoBehaviour
     private Material StarsMaterial;
     private Transform StarsTransform;
     private Transform StarsTransformParent;
+    
+    private ARAnchorManager anchorManager;
+    private ARPlaneManager planeManager;
+
+    public VolumeProfile volume;
+    ColorAdjustments colorAdjustments;
 
     private void Start()
     {
+        volume.TryGet(out colorAdjustments);
         _sun = GameObject.Find("SL_SceneLight");
+        
+        anchorManager = FindObjectOfType<ARAnchorManager>();
+        planeManager = FindObjectOfType<ARPlaneManager>();
         
         sliderGrow.onValueChanged.AddListener((value) => {
             foreach (var plant in _plants)
@@ -81,7 +97,7 @@ public class ARScene : MonoBehaviour
         StarsMaterial=stars.GetComponent<Renderer>().material;
     }
 
-    private void InstantiateParcelle()
+    IEnumerator InstantiateParcelle()
     {
         print($"Instantiate At {_pLat}, {_pLong}");
         
@@ -89,7 +105,7 @@ public class ARScene : MonoBehaviour
         {
             Latitude = _pLat,
             Longitude = _pLong,
-            Altitude = -2,
+            Altitude = -12,
             AltitudeMode = AltitudeMode.GroundRelative
         };
         
@@ -100,19 +116,40 @@ public class ARScene : MonoBehaviour
             MovementSmoothing = 0.05f,
             UseMovingAverage = false,
         };
+        
+        float lastDistance = Single.PositiveInfinity;
+        ARPlane plane = null;
 
-        var newParcelle = Instantiate(_parcelles[systemChoose]);
+        do
+        {
+            foreach (var ArPlane in planeManager.trackables)
+            {
+                var distance = Vector3.Distance(ArPlane.transform.position, loc.ToVector3());
+                if (distance < lastDistance)
+                    plane = ArPlane;
+            }
+
+            yield return new WaitForEndOfFrame();
+        } while (plane == null);
+        
+        print("Not Null");
+        
+        ARAnchor anchor = anchorManager.AttachAnchor(plane, new Pose(plane.transform.position, plane.transform.rotation));
+        var newParcelle = Instantiate(_parcelles[systemChoose], anchor.transform);
+        anchorManager.anchorPrefab = newParcelle;
         
         PlaceAtLocation.AddPlaceAtComponent(newParcelle, loc, opts);
-
+    
         GameObject[] plants = GameObject.FindGameObjectsWithTag("Plant");
         
         foreach (var plant in plants)
         {
             var index = int.Parse(plant.name.Split(" ")[0])/12;
-            print(index);
             _plants.Add(new Plant(index, 0, 0, plant));
         }
+        
+        GameObject.Find("Advice").SetActive(false);
+        
         print("PARCELLE INSTANTIATE");
         
         
@@ -159,7 +196,7 @@ public class ARScene : MonoBehaviour
         
         print("Lat : " + _pLat + " Long : " + _pLong + "Alt : " + _pAlt);
         
-        InstantiateParcelle();
+        StartCoroutine(InstantiateParcelle());
     }
 
     private void Update()
@@ -167,28 +204,40 @@ public class ARScene : MonoBehaviour
         if (_sunLight == null)
             return;
         
-        float lerpVal;
+        float shadowStrengh;
+        float postExposure;
+        float contrast;
         
         StarsTransformParent.eulerAngles=new Vector3(_sunLight.GetStarDomeDeclination(), 0.0f, 0.0f);
         StarsTransform.localEulerAngles=new Vector3(0.0f, 360.0f/24.0f*_sunLight.timeInHours, 0.0f);
+
+
         
         Color C;
         if(_sunLight.GetSunAltitude()>180.0)
         {
-            lerpVal = 0f;
+            postExposure = -4f;
+            shadowStrengh = 0f;
+            contrast = 30f;
             C = new Color(1.0f, 1.0f, 1.0f, Mathf.Clamp((355.0f-_sunLight.GetSunAltitude())*0.05f, 0.0f, 1.0f));
         }	
         else
         {
-            lerpVal = 0.2f;
+            postExposure = 0;
+            contrast = 0;
+            shadowStrengh = 0.2f;
             C = new Color(1.0f, 1.0f, 1.0f, 0.0f);
         }
 
         _sun.GetComponent<Light>().shadowStrength =
-            Mathf.Lerp(_sun.GetComponent<Light>().shadowStrength, lerpVal, Time.deltaTime * 2f);
-
+            Mathf.Lerp(_sun.GetComponent<Light>().shadowStrength, shadowStrengh, Time.deltaTime * 2f);
+        colorAdjustments.postExposure.value = Mathf.Lerp(colorAdjustments.postExposure.value, postExposure, Time.deltaTime * 2f);
+        colorAdjustments.contrast.value = Mathf.Lerp(colorAdjustments.contrast.value, contrast, Time.deltaTime * 2f);
+        
         StarsMaterial.SetColor("_TintColor", C); 
     }
+    
+    public void BackToMenu() => SceneManager.LoadScene("Scenes/Menu");
 
     public class Plant
     {

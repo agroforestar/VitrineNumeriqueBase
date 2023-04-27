@@ -538,8 +538,8 @@ LensFlare:
   m_GameObject: {fileID: 7321799819100870407}
   m_Enabled: 1
   m_Flare: {fileID: 12100000, guid: 09ebe82dbd1113c3d000dc0b8d76c639, type: 2}
-  m_Color: {r: 1, g: 0.9355141, b: 0.8630825, a: 1}
-  m_Brightness: 0.5
+  m_Color: {r: 1, g: 0.3997345, b: 0, a: 1}
+  m_Brightness: 0.17335205
   m_FadeSpeed: 10
   m_IgnoreLayers:
     serializedVersion: 2
