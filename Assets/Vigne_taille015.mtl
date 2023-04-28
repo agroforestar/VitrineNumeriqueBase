@@ -1,0 +1,30 @@
+newmtl Mesh52
+Ka 0.4 0.0 0.8
+Kd 0.4 0.0 0.8
+Ks 0.4 0.0 0.8
+Ns 10.0
+
+newmtl Mesh41
+Ka 0.4 0.4 0.0
+Kd 0.4 0.4 0.0
+Ks 0.4 0.4 0.0
+Ns 10.0
+
+newmtl Mesh50
+Ka 0.0 0.6 0.2
+Kd 0.0 0.6 0.2
+Ks 0.0 0.6 0.2
+Ns 10.0
+
+newmtl Mesh21
+Ka 0.4 0.6 0.0
+Kd 0.4 0.6 0.0
+Ks 0.4 0.6 0.0
+Ns 10.0
+
+newmtl Mesh1
+Ka 0.4 0.4 0.0
+Kd 0.4 0.4 0.0
+Ks 0.4 0.4 0.0
+Ns 10.0
+
