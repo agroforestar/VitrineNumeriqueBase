@@ -54,11 +54,14 @@ public class ARScene : MonoBehaviour
         anchorManager = FindObjectOfType<ARAnchorManager>();
         planeManager = FindObjectOfType<ARPlaneManager>();
         
-        sliderGrow.onValueChanged.AddListener((value) => {
+        //Pour La croissance
+        sliderGrow.onValueChanged.AddListener((value) => { 
             foreach (var plant in _plants)
             {
                 plant.Grow((int)value);
             }});
+        
+        //Pour les saisons
         sliderSeason.onValueChanged.AddListener((value) => {
             foreach (var plant in _plants)
             {
@@ -138,7 +141,7 @@ public class ARScene : MonoBehaviour
         var newParcelle = Instantiate(_parcelles[systemChoose], anchor.transform);
         anchorManager.anchorPrefab = newParcelle;
         
-        PlaceAtLocation.AddPlaceAtComponent(newParcelle, loc, opts);
+        PlaceAtLocation.AddPlaceAtComponent(newParcelle, loc, opts); //Place la parcelle sur les coordonnées
     
         GameObject[] plants = GameObject.FindGameObjectsWithTag("Plant");
         
@@ -151,8 +154,6 @@ public class ARScene : MonoBehaviour
         GameObject.Find("Advice").SetActive(false);
         
         print("PARCELLE INSTANTIATE");
-        
-        
     }
 
     IEnumerator GetPosition()
@@ -166,7 +167,7 @@ public class ARScene : MonoBehaviour
         if(!Input.location.isEnabledByUser)
             yield break;
 
-        Input.location.Start(); 
+        Input.location.Start(); //Démarre le service de géolocalisation intégré à Unity
 
         // Waits until the location service initializes
         int maxWait = 20;
@@ -196,7 +197,8 @@ public class ARScene : MonoBehaviour
         
         print("Lat : " + _pLat + " Long : " + _pLong + "Alt : " + _pAlt);
         
-        StartCoroutine(InstantiateParcelle());
+        if(systemChoose != 3)
+            StartCoroutine(InstantiateParcelle()); // créé la parcelle aux coordonnées de l'utilisateur
     }
 
     private void Update()
